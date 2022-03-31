@@ -1,0 +1,36 @@
+#Deployment da conversao temperatura
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webtemp
+spec:
+  selector:
+    matchLabels:
+      app: webtemp
+  template:
+    metadata:
+      labels:
+        app: webtemp
+    spec:
+      containers:
+      - name: webtemp
+        image: zoekin/conversao-temperatura:v1
+        ports:
+        - containerPort: 8080
+             
+---
+
+#Service do conversor de temperatura
+apiVersion: v1
+kind: Service
+metadata:
+  name: webtemp
+spec:
+  selector:
+    app: webtemp
+  ports:
+  - port: 8080
+    protocol: TCP
+    nodePort: 30000
+  type: NodePort
