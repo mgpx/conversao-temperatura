@@ -1,0 +1,66 @@
+
+name: CI-CD
+
+
+on:
+
+  push:
+    branches: [ main ]
+
+
+  workflow_dispatch:
+
+
+jobs:
+
+  CI:
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+
+      - name: Run a one-line script
+        run: echo Hello, world!
+
+      - name: Run a multi-line script
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
+          
+      - name: Docker Login
+        uses: docker/login-action@v1.14.1
+        with:
+          username: ${{secrets.DOCKERHUB_USER}}
+          password: ${{secrets.DOCKERHUB_PWD}}
+          
+      - name: Docker Build and Push
+        uses: docker/build-push-action@v2.10.0
+        with:
+          context: ./src
+          file: ./src/Dockerfile
+          push: true
+          tags: |
+            zoekin/conversao-temperatura:latest
+            zoekin/conversao-temperatura:${{github.run_number}}
+            
+  CD:
+    needs: [CI]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Kubernetes Set Context
+        uses: Azure/k8s-set-context@v2
+        with:
+          method: kubeconfig
+          kubeconfig: ${{secrets.K8S_CONFIG}}
+      - name: Deploy to Kubernetes cluster
+        uses: Azure/k8s-deploy@v3.0
+        with:
+          images: zoekin/conversao-temperatura:${{github.run_number}}
+          manifests: |
+            k8s/deployment.yaml
